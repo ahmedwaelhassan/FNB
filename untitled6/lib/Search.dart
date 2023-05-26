@@ -1,45 +1,49 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-// import 'package:fluttertoast/fluttertoast.dart';
-import 'package:grouped_buttons/grouped_buttons.dart';
 import 'package:untitled6/Bar.dart';
 import 'package:http/http.dart' as http;
 
+import 'Create Account.dart';
+import 'Crypto/crypto.dart';
 
 class Search extends StatefulWidget {
-  var Email="";
-  var Password ="";
-  var username="";
-  var mobile="";
-  var Gender="";
-  var dob="";
-  var id="";
-  var Adress="";
-  var nationalid="";
+  var Email = "";
+  var Password = "";
+  var username = "";
+  var mobile = "";
+  var Gender = "";
+  var dob = "";
+  var id = "";
+  var Adress = "";
+  var nationalid = "";
 
-  Search(
-      {
-        required this.Email,
-        required this.Password,
-        required this.username,
-        required this.mobile,
-        required this.Gender,
-        required this.dob,
-        required this.id,
-        required this.Adress,
-        required this.nationalid,
-      }
-      );
+  Search({
+    required this.Email,
+    required this.Password,
+    required this.username,
+    required this.mobile,
+    required this.Gender,
+    required this.dob,
+    required this.id,
+    required this.Adress,
+    required this.nationalid,
+  });
 
   @override
-  State<Search> createState() => _MyAppState(Email: Email, Password: Password, username: username, mobile: mobile, Gender: Gender, dob: dob, id: id, Adress: Adress, nationalid: nationalid);
+  State<Search> createState() => _MyAppState(
+      Email: Email,
+      Password: Password,
+      username: username,
+      mobile: mobile,
+      Gender: Gender,
+      dob: dob,
+      id: id,
+      Adress: Adress,
+      nationalid: nationalid);
 }
-
-
-
 
 bool value = false;
 String dropdown = 'Egyptian';
@@ -130,8 +134,14 @@ var money;
 Future getUserData(String accnum) async {
   var url = Uri.parse(
       'https://inconspicuous-pairs.000webhostapp.com/Searchdesktop.php');
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
   var response = await http.post(url, body: {
-    "accountnumber": accnum,
+    "accountnumber": encAcc,
   });
 
   // print(json.decode(response.body));
@@ -141,21 +151,22 @@ Future getUserData(String accnum) async {
   return data1;
   // return json.decode(response.body);
 }
+
 String bookdate = '';
 DateTime date1 = DateTime.now();
-Future<Null> selectinDate(BuildContext context) async {
 
-  final DateTime? picked =await showDatePicker(
-    context:context,
+Future<Null> selectinDate(BuildContext context) async {
+  final DateTime? picked = await showDatePicker(
+    context: context,
     initialDate: date1,
     firstDate: DateTime(1960),
-    lastDate: DateTime(2040),);
-  if(picked != null && picked != date1) {
-      date1 = picked;
-      print(date1.toString());
+    lastDate: DateTime(2040),
+  );
+  if (picked != null && picked != date1) {
+    date1 = picked;
+    print(date1.toString());
   }
 }
-
 
 TimeOfDay time1 = TimeOfDay.now();
 
@@ -165,14 +176,17 @@ Future<Null> selectTime(BuildContext context) async {
     context: context,
     initialTime: time1,
     initialEntryMode: initialEntryMode,
-
-
   );
-    time1 = tpicked!;
-    print(time1.toString());
-
+  time1 = tpicked!;
+  print(time1.toString());
 }
+
 Future<void> getData(String accnum) async {
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+  final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
   name = data[0]["name"];
   dob1 = data[0]["dob"];
   nationality = data[0]["nationality"];
@@ -187,7 +201,7 @@ Future<void> getData(String accnum) async {
   income = data[0]["monthlyicome"];
   type = data[0]["accounttype"];
   id1 = data[0]["nationalid"];
-  accountnum1 = data[0]["accountnumber"];
+  accountnum1 = decryptedaccnum;
   balance1 = data[0]["balance"];
   money = data[0]["money"];
 }
@@ -195,8 +209,14 @@ Future<void> getData(String accnum) async {
 Future Delete(String accnum) async {
   var url =
       Uri.parse('https://inconspicuous-pairs.000webhostapp.com/delete.php');
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
   var response = await http.post(url, body: {
-    "accountnumber": accnum,
+    "accountnumber": encAcc,
   });
 
   // print(json.decode(response.body));
@@ -208,6 +228,11 @@ Future Delete(String accnum) async {
 }
 
 Future<void> delete(String accnum) async {
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+  final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
   name = data[0]["name"];
   dob1 = data[0]["dob"];
   nationality = data[0]["nationality"];
@@ -222,7 +247,7 @@ Future<void> delete(String accnum) async {
   income = data[0]["monthlyicome"];
   type = data[0]["accounttype"];
   id1 = data[0]["nationalid"];
-  accountnum1 = data[0]["accountnumber"];
+  accountnum1 = decryptedaccnum;
   balance1 = data[0]["balance"];
   money = data[0]["money"];
 }
@@ -231,8 +256,14 @@ Future Updatedata(var accnum) async {
   var url = Uri.parse(
       'https://inconspicuous-pairs.000webhostapp.com/updatecustomer.php');
   print(accnum);
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
   final response = await http.post(url, body: {
-    "accountnumber": accnum,
+    "accountnumber": encAcc,
     "name": cfn.text,
     "mobilenumber": mohphone.text,
     "homenumber": homephone.text,
@@ -260,37 +291,34 @@ Future Updatedata(var accnum) async {
 }
 
 class _MyAppState extends State<Search> {
-  var Email="";
-  var Password ="";
-  var username="";
-  var mobile="";
-  var Gender="";
-  var dob="";
-  var id="";
-  var Adress="";
-  var nationalid="";
+  var Email = "";
+  var Password = "";
+  var username = "";
+  var mobile = "";
+  var Gender = "";
+  var dob = "";
+  var id = "";
+  var Adress = "";
+  var nationalid = "";
 
-  _MyAppState(
-      {
-        required this.Email,
-        required this.Password,
-        required this.username,
-        required this.mobile,
-        required this.Gender,
-        required this.dob,
-        required this.id,
-        required this.Adress,
-        required this.nationalid,
-      }
-      );
+  _MyAppState({
+    required this.Email,
+    required this.Password,
+    required this.username,
+    required this.mobile,
+    required this.Gender,
+    required this.dob,
+    required this.id,
+    required this.Adress,
+    required this.nationalid,
+  });
 
   @override
   Widget build(BuildContext context) {
-    var date="${date1.year} - ${date1.month} - ${date1.day}".toString();
-    var time="${time1.hour} - ${time1.minute}".toString();
+    var date = "${date1.year} - ${date1.month} - ${date1.day}".toString();
+    var time = "${time1.hour} - ${time1.minute}".toString();
     print(date);
     print(time);
-
 
     return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -299,27 +327,41 @@ class _MyAppState extends State<Search> {
             child: Scaffold(
                 appBar: AppBar(
                   toolbarHeight: 70,
-                  flexibleSpace:
-                  Padding(
+                  flexibleSpace: Padding(
                     padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
                     child: Container(
-                        child:
-                        Row(
-                            children: [
-                              Image(image: AssetImage("images/logo3.jpeg"),height:150 ,),
-                              SizedBox(
-                                  width: 1300
-                              ),
-                              IconButton(onPressed: (){
-                                Navigator.push(context, MaterialPageRoute(builder: (context) =>Search(Email: Email, Password: Password, username: username, mobile: mobile, Gender: Gender, dob: dob, id: id, Adress: Adress, nationalid: nationalid) ,));
-                              },
-                                  icon: Icon(Icons.person_search_rounded,color: Colors.white,size: 30,)),
-                              SizedBox(
-                                width: 10,
-                              ),
-                            ]
-                        )
-                    ),
+                        child: Row(children: [
+                      Image(
+                        image: AssetImage("images/logo3.jpeg"),
+                        height: 150,
+                      ),
+                      SizedBox(width: 1300),
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Search(
+                                      Email: Email,
+                                      Password: Password,
+                                      username: username,
+                                      mobile: mobile,
+                                      Gender: Gender,
+                                      dob: dob,
+                                      id: id,
+                                      Adress: Adress,
+                                      nationalid: nationalid),
+                                ));
+                          },
+                          icon: Icon(
+                            Icons.person_search_rounded,
+                            color: Colors.white,
+                            size: 30,
+                          )),
+                      SizedBox(
+                        width: 10,
+                      ),
+                    ])),
                   ),
                   backgroundColor: Color(0xff8d0000),
                 ),
@@ -336,7 +378,16 @@ class _MyAppState extends State<Search> {
                     labelColor: Color(0xff8d0000),
                     labelPadding: EdgeInsets.only(right: 0, left: 0),
                     tabs: [
-                       PlutoMenuBarDemo(Email: Email, Password: Password, username: username, mobile: mobile, Gender: Gender, dob: dob, id: id, Adress: Adress, nationalid: nationalid),
+                      PlutoMenuBarDemo(
+                          Email: Email,
+                          Password: Password,
+                          username: username,
+                          mobile: mobile,
+                          Gender: Gender,
+                          dob: dob,
+                          id: id,
+                          Adress: Adress,
+                          nationalid: nationalid),
                     ],
                   ),
                   SizedBox(
@@ -360,6 +411,7 @@ class _MyAppState extends State<Search> {
                               child: TextField(
                                 onSubmitted: (value) {
                                   setState(() {
+
                                     getUserData(search.text);
                                     getData(search.text);
                                     cfn.text = name;
@@ -543,7 +595,7 @@ class _MyAppState extends State<Search> {
                                           borderSide: BorderSide(width: 5)),
                                       focusColor: Colors.black,
                                       labelStyle:
-                                      TextStyle(color: Colors.black),
+                                          TextStyle(color: Colors.black),
                                     ),
                                     style: TextStyle(fontSize: 16))),
                             SizedBox(
@@ -1012,6 +1064,37 @@ class _MyAppState extends State<Search> {
                           height: 20,
                         ),
                         Row(
+                          children: <Widget>[
+                            SizedBox(
+                              width: 50,
+                            ),
+                            Container(
+                              child: Text(" Signature : ",
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  )),
+                            ),
+                            SizedBox(
+                              width: 30,
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ImageFolderScreen()));
+                              },
+                              icon: Icon(Icons.paste_outlined),
+                              iconSize: 30,
+                            )
+                          ],
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
+                        Row(
                           children: [
                             Container(
                               padding: EdgeInsets.only(left: 50),
@@ -1127,7 +1210,7 @@ class _MyAppState extends State<Search> {
                                 ),
                               )
                             ])),
-                            SizedBox(width: 40),
+                            SizedBox(width: 20),
                             Center(
                               child: ElevatedButton(
                                 onPressed: () {
@@ -1135,7 +1218,7 @@ class _MyAppState extends State<Search> {
                                   setState(() {
                                     _isreadonly = true;
                                     showAlertDialog(context,
-                                        "Account has been Updated Sucessfuly");
+                                        "Account has been Updated Successfully");
                                   });
                                 },
                                 child: Text('Update',
@@ -1190,5 +1273,90 @@ class _MyAppState extends State<Search> {
         builder: (BuildContext context) {
           return alertDialog;
         });
+  }
+}
+
+class ImageFolderScreen extends StatefulWidget {
+  @override
+  _ImageFolderScreenState createState() => _ImageFolderScreenState();
+}
+
+class _ImageFolderScreenState extends State<ImageFolderScreen> {
+  List<File> _images = [];
+
+  void _getImages() {
+    String folderPath =
+        'C:\\Users\\green\\StudioProjects\\untitled6\\signature'; // replace with the path to your image folder
+    String imageName = search.text;
+
+    // Find all files in folder with matching name
+    Directory(folderPath).listSync().forEach((item) {
+      if (item is File &&
+          item.path.toLowerCase().endsWith('.png') &&
+          item.path.toLowerCase().contains(imageName.toLowerCase())) {
+        _images.add(item);
+      }
+    });
+
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 70,
+        flexibleSpace: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+          child: Container(
+              child: Row(children: [
+                SizedBox(
+                  width: 50,
+                ),
+                Image(
+                  image: AssetImage("images/logo3.jpeg"),
+                  height: 150,
+                ),
+                SizedBox(width: 455),
+                Text(" Signature Image",style: TextStyle(fontSize: 32,color: Colors.white),)
+
+              ])),
+        ),
+        backgroundColor: Color(0xff8d0000),
+      ),
+      body: Column(
+        children: <Widget>[
+      Container(
+      padding: EdgeInsets.only(left: 50,top: 50),
+      child: ElevatedButton(
+        onPressed:  _getImages,
+        child: Text(
+          'Show image',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.fromLTRB(50, 20, 50, 20),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                  style: BorderStyle.solid,
+                  width: 1,
+                  color: Colors.black)),
+          primary: Color(0xff8d0000),
+        ),
+      ),
+    ),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 1,
+              children: _images.map((image) => Image.file(image)).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

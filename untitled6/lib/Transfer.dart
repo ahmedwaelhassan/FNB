@@ -1,10 +1,16 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_compare/image_compare.dart';
 import 'package:untitled6/Bar.dart';
 import 'package:http/http.dart' as http;
-import 'package:untitled6/signature.dart';
+import 'Crypto/crypto.dart';
 import 'Search.dart';
+import 'package:signature/signature.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class transfers extends StatefulWidget {
   var Email = "";
@@ -91,21 +97,31 @@ Future<Null> selectTime(BuildContext context) async {
   time1 = tpicked!;
   print(time1.toString());
 }
-
 var h;
 
 Future SendData2(var date, var time) async {
   var url = Uri.parse(
       'https://inconspicuous-pairs.000webhostapp.com/transactions.php');
 
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum.text))));
+  final encAcc2 = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum2.text))));
+  final enctype = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode('Bank transfer'))));
+  final encamount = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(amount.text))));
+  final encdate = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(date))));
+  final enctime = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(time))));
+  final encrbalance = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(h.toString()))));
+
   final response = await http.post(url, body: {
-    "accountnumber": accnum.text,
-    "tooo": accnum2.text,
-    "type": 'Bank transfer',
-    "amount": amount.text,
-    "date1": date,
-    "time1": time,
-    "rbalance": h.toString(),
+    "accountnumber": encAcc,
+    "tooo": encAcc2,
+    "type": enctype,
+    "amount": encamount,
+    "date1": encdate,
+    "time1": enctime,
+    "rbalance": encrbalance,
   });
   try {
     var data = json.decode(response.body);
@@ -144,19 +160,28 @@ class _transfersState extends State<transfers> {
   });
 
   Future Updatedata(var accnum1, var c) async {
+
     var url =
         Uri.parse('https://inconspicuous-pairs.000webhostapp.com/Deposit.php');
+
     print(accnum1.toString());
     print(c.toString());
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+
+    final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum1))));
+    final encbalance = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(c.toString()))));
+
     final response = await http.post(url, body: {
-      "accnum": accnum1,
+      "accnum": encAcc,
       "balance": c.toString(),
     });
     try {
       var data = json.decode(response.body);
       print(data);
       if (data == "Error") {
-        print("mansour");
+        print("ahmed");
       } else if (data == "Success") {
         print("bebo");
       } else {
@@ -180,8 +205,15 @@ class _transfersState extends State<transfers> {
   Future getUserData(String accnum) async {
     var url = Uri.parse(
         'https://inconspicuous-pairs.000webhostapp.com/Searchdesktop.php');
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+
+    final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
     var response = await http.post(url, body: {
-      "accountnumber": accnum,
+    "accountnumber": encAcc,
+
     });
 
     // print(json.decode(response.body));
@@ -193,7 +225,12 @@ class _transfersState extends State<transfers> {
   }
 
   Future<void> getData(String accnum) async {
-    accountnum1 = data[0]["accountnumber"];
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+    final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
+    accountnum1 = decryptedaccnum;
     balance1 = data[0]["balance"];
     money = data[0]["money"];
     password = data[0]["password"];
@@ -759,7 +796,7 @@ class _transfersState extends State<transfers> {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => Signaturee(
+                                    builder: (context) => Signatureeee1(
                                         Email: Email,
                                         Password: Password,
                                         username: username,
@@ -906,4 +943,254 @@ void showAlertDialog(BuildContext context, var text) {
       builder: (BuildContext context) {
         return alertDialog;
       });
+}
+class Signatureeee1 extends StatefulWidget {
+  var Email = "";
+  var Password = "";
+  var username = "";
+  var mobile = "";
+  var Gender = "";
+  var dob = "";
+  var id = "";
+  var Adress = "";
+  var nationalid = "";
+
+  Signatureeee1({
+    required this.Email,
+    required this.Password,
+    required this.username,
+    required this.mobile,
+    required this.Gender,
+    required this.dob,
+    required this.id,
+    required this.Adress,
+    required this.nationalid,
+  });
+
+  @override
+  State<Signatureeee1> createState() => _MyHomePageState(
+      Email: Email,
+      Password: Password,
+      username: username,
+      mobile: mobile,
+      Gender: Gender,
+      dob: dob,
+      id: id,
+      Adress: Adress,
+      nationalid: nationalid);
+}
+
+var pic;
+
+class _MyHomePageState extends State<Signatureeee1> {
+  var Email = "";
+  var Password = "";
+  var username = "";
+  var mobile = "";
+  var Gender = "";
+  var dob = "";
+  var id = "";
+  var Adress = "";
+  var nationalid = "";
+
+  _MyHomePageState({
+    required this.Email,
+    required this.Password,
+    required this.username,
+    required this.mobile,
+    required this.Gender,
+    required this.dob,
+    required this.id,
+    required this.Adress,
+    required this.nationalid,
+  });
+
+  Uint8List? exportedImage;
+  SignatureController controller = SignatureController(
+    penStrokeWidth: 5,
+    penColor: Colors.black,
+    exportBackgroundColor: Colors.white70,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 70,
+        flexibleSpace: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+          child: Container(
+              child: Row(children: [
+                SizedBox(
+                  width: 50,
+                ),
+                Image(
+                  image: AssetImage("images/logo3.jpeg"),
+                  height: 150,
+                ),
+                SizedBox(width: 1250),
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Search(
+                                Email: Email,
+                                Password: Password,
+                                username: username,
+                                mobile: mobile,
+                                Gender: Gender,
+                                dob: dob,
+                                id: id,
+                                Adress: Adress,
+                                nationalid: nationalid),
+                          ));
+                    },
+                    icon: Icon(
+                      Icons.person_search_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    )),
+                SizedBox(
+                  width: 10,
+                ),
+              ])),
+        ),
+        backgroundColor: Color(0xff8d0000),
+      ),
+      body: Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Signature(
+              controller: controller,
+              width: 500,
+              height: 300,
+              backgroundColor: Colors.white,
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                    padding: EdgeInsets.all(10),
+                    child: ElevatedButton(
+                        onPressed: () async {
+                          exportedImage = await controller.toPngBytes();
+                          pic = exportedImage;
+                          // print(pic);
+                          //API
+                          setState(() {});
+                        },
+                        child: const Text(
+                          "Show",
+                          style: TextStyle(fontSize: 20),
+                        ),
+                        style: ButtonStyle(
+                            backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.red),
+                            shape: MaterialStateProperty.all<
+                                RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                    side: BorderSide(color: Colors.red)))))),
+                Padding(
+                    padding: EdgeInsets.all(5),
+                    child: ElevatedButton(
+                        onPressed: () {
+                          controller.clear();
+                        },
+                        child: const Text(
+                          "Clear",
+                          style: TextStyle(fontSize: 20),
+                        ),
+                        style: ButtonStyle(
+                            backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.blue),
+                            shape: MaterialStateProperty.all<
+                                RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                    side:
+                                    BorderSide(color: Colors.white70)))))),
+                Padding(
+                    padding: EdgeInsets.all(5),
+                    child: ElevatedButton(
+                        onPressed: () async {
+
+                          // Get the saved signature image
+                          final file = File('C:\\Users\\green\\StudioProjects\\untitled6\\signature\\${accnum.text}.png');
+                          final savedImageData = await file.readAsBytes();
+
+                         /* var imageResult = await compareImages(
+                              src1: exportedImage, src2: savedImageData, algorithm:IMED(sigma : 1,blurRatio : 0.005));
+
+                          print('Difference: ${imageResult}');
+                          showAlertDialog(context, ' Difference : ${imageResult}%');
+
+
+                          var Accuracy = 100 - imageResult * 100;
+
+                          print(Accuracy);
+*/
+                          var image1 = img.decodeImage(File('C:\\Users\\green\\StudioProjects\\untitled6\\signature\\${accnum.text}.png').readAsBytesSync());
+                          var image2 = img.decodeImage(File('C:\\Users\\green\\StudioProjects\\untitled6\\signature\\${accnum.text}.png').readAsBytesSync());
+
+                          // Resize the images to the same size
+                          var resizedImage1 = img.copyResize(image1!, width: image2!.width, height: image2.height);
+
+                          // Calculate the MSE
+                          var mse = 0.0;
+                          for (var y = 0; y < image2.height; y++) {
+                            for (var x = 0; x < image2.width; x++) {
+                              var pixel1 = resizedImage1.getPixel(x, y);
+                              var pixel2 = image2.getPixel(x, y);
+                              var redDiff = ((pixel1 >> 16) & 0xFF) - ((pixel2 >> 16) & 0xFF);
+                              var greenDiff = ((pixel1 >> 8) & 0xFF) - ((pixel2 >> 8) & 0xFF);
+                              var blueDiff = (pixel1 & 0xFF) - (pixel2 & 0xFF);
+                              mse += pow(redDiff, 2) + pow(greenDiff, 2) + pow(blueDiff, 2);
+                            }
+                          }
+                          mse /= ((image2.width * image2.height * 3)*100);
+
+                          print(" MSE between 2 images is $mse %");
+                          showDialog(context: context, builder: (context) => AlertDialog(
+                            title: Text('Signature similarity '),
+                            content: Text('MSE between 2 images is $mse %'),
+                          ),);
+
+                        },
+                        child: const Text(
+                          "Compare",
+                          style: TextStyle(fontSize: 20),
+                        ),
+                        style: ButtonStyle(
+                            backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.red),
+                            shape: MaterialStateProperty.all<
+                                RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                    side: BorderSide(color: Colors.red)))))),
+
+              ],
+            ),
+            SizedBox(
+              height: 5,
+            ),
+            if (exportedImage != null)
+              Image.memory(
+                exportedImage!,
+                width: 600,
+                height: 350,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

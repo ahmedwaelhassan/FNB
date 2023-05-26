@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:untitled6/terms.dart';
 import 'Bar.dart';
+import 'Crypto/crypto.dart';
 import 'Search.dart';
 import 'package:http/http.dart' as http;
+import 'dart:math';
 
 class certificate extends StatefulWidget {
   var Email="";
@@ -100,16 +103,30 @@ class _certificateState extends State<certificate> {
 
   TextEditingController accountnumber = new TextEditingController();
   TextEditingController amount = new TextEditingController();
+  Random random = Random();
 
   Future SendData() async {
-    var url = Uri.parse(
-        'https://inconspicuous-pairs.000webhostapp.com/cert.php');
+
+    var url = Uri.parse('https://inconspicuous-pairs.000webhostapp.com/cert.php');
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+
+    final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accountnumber.text))));
+
+    int randomNumber = random.nextInt(900) + 100;
+
+    var id = "${date1.year}${date1.month}${date1.day}$randomNumber".toString();
+    var certdate = "${date1.year}-${date1.month}-${date1.day}".toString();
 
     final response = await http.post(url, body: {
+
+      "accountnumber":encAcc,
       "certtype": dropdown,
-      "certdate": [date1.year,date1.month,date1.day].toString(),
+      "certdate": certdate,
       "certamount": amount.text,
-      "accountnumber":accountnumber.text
+      "certid":id,
+
     });
     try {
       var data = json.decode(response.body);
@@ -119,6 +136,9 @@ class _certificateState extends State<certificate> {
         setState(() {
           amount.text = '';
           accountnumber.text = '';
+          AlertDialog(
+            content: Text('Applied Successfully '),
+          );
         });
       }
       if (data == "Already Exists") {
@@ -218,6 +238,7 @@ class _certificateState extends State<certificate> {
                           ]),
                       child: TextField(
                         controller: accountnumber,
+                        textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         cursorColor: Colors.black,
                         onChanged: (value) {
@@ -297,6 +318,7 @@ class _certificateState extends State<certificate> {
                           ]),
                       child: TextField(
                         controller: amount,
+                        textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         cursorColor: Colors.black,
                         onChanged: (value) {

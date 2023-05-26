@@ -1,10 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:grouped_buttons/grouped_buttons.dart';
 import 'package:untitled6/Bar.dart';
-import 'package:flutter_sms/flutter_sms.dart';
-
+import 'Crypto/crypto.dart';
 import 'Search.dart';
+import 'package:http/http.dart'as http;
 
 class lmessage extends StatefulWidget {
   var Email="";
@@ -59,14 +60,112 @@ class _MyAppState extends State<lmessage> {
         required this.nationalid,
       }
       );
+
+  TextEditingController usernamee=TextEditingController();
+  TextEditingController mobilee=TextEditingController();
+
+  var mobileee;
+  var usernameee;
+  var data;
+  var emailadd;
+  var accccnumm;
+
+  Future getUserData(String accnum) async {
+    var url = Uri.parse(
+        'https://inconspicuous-pairs.000webhostapp.com/Searchdesktop.php');
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+
+    final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
+    var response = await http.post(url, body: {
+      "accountnumber": encAcc,
+    });
+
+    // print(json.decode(response.body));
+    var data1 = await json.decode(response.body);
+    print(data1);
+    data = data1;
+    return data1;
+    // return json.decode(response.body);
+  }
+  Future<void> getData(String accnum) async {
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+    final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
+    accccnumm =decryptedaccnum;
+    usernameee = data[0]["name"];
+    mobileee = data[0]["mobilenumber"];
+  }
+
+  TextEditingController accnumm=TextEditingController();
+
+  var messages;
+  var type;
+  var accnum;
+
+  Future SendData() async {
+    var url = Uri.parse(
+        'https://inconspicuous-pairs.000webhostapp.com/messages.php');
+
+    final response = await http.post(url, body: {
+      "accountnumber": accnumm.text,
+      "message": dropdown,
+      "type": 'Loan',
+
+    });
+    try {
+      var data = json.decode(response.body);
+      print(data);
+      if (data == "Error") {
+      } else if (data == "Success") {
+        showAlertDialog(context," Message has been sent successfully ");
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // hanin
+
+  void sendSms() async {
+    String accountSid = 'AC29adea0d1b73d261d1788185df59d77d';
+    String authToken = '99e04fa03c2dd938fe732588babfdfcc';
+    String fromNumber = '+12705141944';
+    String toNumber = mobilee.text;
+    String message = dropdown;
+    String uri = 'https://api.twilio.com/2010-04-01/Accounts/$accountSid/Messages.json';
+
+    var response = await http.post(Uri.parse(uri),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + base64Encode(utf8.encode('$accountSid:$authToken')),
+      },
+      body: {
+        'From': fromNumber,
+        'To': toNumber,
+        'Body': message,
+      },
+    );
+
+    if (response.statusCode == 201) {
+      print('SMS message sent successfully!');
+    } else {
+      print('Failed to send SMS message. ${response.body}');
+    }
+  }
+
   bool isChecked = false;
-  String dropdown ='your account will be direct debited in the first week of the month Please ensure you have sufficient funds available';
-  var items = ['your account will be direct debited in the first week of the month Please ensure you have sufficient funds available',
-    'dear valued customer, we have an update about your loan application.Please call me on {Number} - {Manager}, {branch}',
-    'dear valued customer, we have updated the status of your personal loan application. ',
-    'Login securely to view online or call your account manager.',
-    'dear valued customer, this is a friendly alert to let you know that your personal loan has been approved. ',
-    'If you have any questions, please call {Manager} on {Number}.',
+  String dropdown ='Need funds for a big purchase or unexpected expense? We can help! Contact us today to learn about our loan options.';
+  var items = ['Need funds for a big purchase or unexpected expense? We can help! Contact us today to learn about our loan options.',
+    'Looking to start a new business or expand your current one? We offer business loans to help you achieve your goals.',
+    'Need a personal loan for a home renovation or vacation? We have flexible loan options to fit your needs.',
+    'We understand that unexpected expenses can arise. Our loan options can help you get the funds you need, when you need them.',
+    'Our loan experts are here to help you navigate the lending process and find the right loan for your needs.',
+    'Want to consolidate your debt or improve your credit score? Our loan options can help you get on the path to financial stability.'
   ];
 
   @override
@@ -165,10 +264,20 @@ class _MyAppState extends State<lmessage> {
                             height: 40,
                             width: 250,
                             child: TextField(
+                              controller: accnumm,
                               cursorColor: Colors.black,
                               onChanged: (value) {
                                 setState(() {});
                               },
+                              onSubmitted: (value) {
+                                getUserData(accnumm.text);
+                                getData(accnumm.text);
+                              setState(() {
+                                usernamee.text=usernameee;
+                                mobilee.text=mobileee;
+                              });
+                                },
+
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(
                                     borderSide: BorderSide(width: 1)),
@@ -193,6 +302,7 @@ class _MyAppState extends State<lmessage> {
                             height: 40,
                             width: 250,
                             child: TextField(
+                              controller: usernamee,
                               cursorColor: Colors.black,
                               onChanged: (value) {
                                 setState(() {});
@@ -221,6 +331,7 @@ class _MyAppState extends State<lmessage> {
                             height: 40,
                             width: 250,
                             child: TextField(
+                              controller: mobilee,
                               cursorColor: Colors.black,
                               onChanged: (value) {
                                 setState(() {});
@@ -311,7 +422,10 @@ class _MyAppState extends State<lmessage> {
                           SizedBox(width: 40),
                           Center(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                SendData();
+                                sendSms();
+                              },
                               child: Text('Send',
                                   style: TextStyle(
                                     color: Colors.black,
@@ -334,4 +448,28 @@ class _MyAppState extends State<lmessage> {
                   ]))
                 ])))));
   }
+}
+void showAlertDialog(BuildContext context, var text) {
+  var alertDialog = AlertDialog(
+    content: Text(
+      text,
+      style: TextStyle(color: Color(0xff8d0000), fontSize: 30),
+    ),
+    actions: [
+      ElevatedButton(
+          onPressed: () {},
+          child: Text(
+            'Ok',
+          ),
+          style: ButtonStyle(
+            iconSize: MaterialStatePropertyAll(20),
+            backgroundColor: MaterialStatePropertyAll(Color(0xff8d0000)),
+          )),
+    ],
+  );
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alertDialog;
+      });
 }

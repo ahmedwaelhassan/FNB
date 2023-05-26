@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'Bar.dart';
+import 'Crypto/crypto.dart';
 import 'Search.dart';
 
 class certificaterequest extends StatefulWidget {
@@ -35,6 +36,7 @@ TextEditingController certtidd =TextEditingController();
 var status ;
 
 Future Updatedata(var certid) async {
+
   var url = Uri.parse(
       'https://inconspicuous-pairs.000webhostapp.com/cert%20getdata.php');
   print(certid);
@@ -60,6 +62,7 @@ Future Updatedata(var certid) async {
 
 
 class certificaterequestState extends State<certificaterequest> {
+
   var Email = "";
   var Password = "";
   var username = "";
@@ -191,6 +194,10 @@ class certificaterequestState extends State<certificaterequest> {
                                   return ListView.builder(
                                     itemCount: snapshot.data?.length,
                                     itemBuilder: (context, index) {
+                                      final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+                                      final aes = Aes(key);
+                                      final decryptedAcc = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['accountnumber'])));
+
                                       return Column(
                                         children: [
                                           Container(
@@ -276,7 +283,7 @@ class certificaterequestState extends State<certificaterequest> {
                                                     children: [
                                                       Container(
                                                         child: Text(
-                                                            '  Account number : ${snapshot.data?[index]['accountnumber']}',
+                                                            '  Account number : ${decryptedAcc}',
                                                             style: TextStyle(
                                                                 fontSize: 17,
                                                                 fontWeight:
@@ -332,7 +339,7 @@ class certificaterequestState extends State<certificaterequest> {
                               ),
                               SizedBox(
                                 height: 50,
-                                width: 50,
+                                width: 150,
                                 child: TextFormField(
                                   textAlign: TextAlign.center,
                                   controller: certtidd,

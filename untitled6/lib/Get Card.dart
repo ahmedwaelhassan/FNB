@@ -1,9 +1,10 @@
 import 'dart:convert';
-
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:select_card/select_card.dart';
 import 'Bar.dart';
+import 'Crypto/crypto.dart';
 import 'Search.dart';
 import 'package:http/http.dart' as http;
 
@@ -35,6 +36,7 @@ class GetCard extends StatefulWidget {
   @override
   State<GetCard> createState() => _MyAppState(Email: Email, Password: Password, username: username, mobile: mobile, Gender: Gender, dob: dob, id: id, Adress: Adress, nationalid: nationalid);
 }
+
 TextEditingController customername= TextEditingController();
 TextEditingController accnumber= TextEditingController();
 TextEditingController acc= TextEditingController();
@@ -48,12 +50,21 @@ String? cardGroupResult2;
 Future SendData() async {
   var url = Uri.parse('https://inconspicuous-pairs.000webhostapp.com/GetCard.php') ;
 
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnumber.text))));
+  final enccus = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(customername.text))));
+  final encedate = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(edatee.text))));
+  final enccvv= base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(cvvv.text))));
+
   final response = await http.post(url, body:{
     "customername": customername.text,
-    "accountnumber": accnumber.text,
+    "accountnumber": encAcc,
     "edate": edatee.text,
     "cvv":cvvv.text,
     "cardtype":cardGroupResult2,
+
   });
   try {
     var data = json.decode(response.body);
@@ -61,17 +72,12 @@ Future SendData() async {
     if (data == "Error") {
     }
     else if (data == "Success") {
-
-      customername.text='';
-      acc.text='';
-      edatee.text='';
-      cvvv.text='';
-
+      accnumber.text="";
+      customername.text="";
+      edatee.text="";
+      cvvv.text="";
     }
     if (data == "Already Exists") {
-    }
-    else {
-      print("error");
     }
   }
 
@@ -425,16 +431,7 @@ class _MyAppState extends State<GetCard> {
                                             color: Color(0xff8d0000))))),
                             onPressed: () {
                               SendData();
-                              setState(() {
-                                accnumber.text="";
-                                customername.text="";
-                                edatee.text="";
-                                cvvv.text="";
-                                showAlertDialog(context, " Card has been created sucessfully ");
-                              });
-                            },
-
-
+                            }
                         ),
                       )),
                       Container(
@@ -473,28 +470,29 @@ class _MyAppState extends State<GetCard> {
                   ])
                 ]))));
   }
-  void showAlertDialog(BuildContext context, var text) {
-    var alertDialog = AlertDialog(
-      content: Text(
-        text,
-        style: TextStyle(color: Color(0xff8d0000), fontSize: 30),
-      ),
-      actions: [
-        ElevatedButton(
-            onPressed: () {},
-            child: Text(
-              'Ok',
-            ),
-            style: ButtonStyle(
-              iconSize: MaterialStatePropertyAll(20),
-              backgroundColor: MaterialStatePropertyAll(Color(0xff8d0000)),
-            )),
-      ],
-    );
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return alertDialog;
-        });
-  }
+}
+
+void showAlertDialog( BuildContext context, var text) {
+  var alertDialog = AlertDialog(
+    content: Text(
+      text,
+      style: TextStyle(color: Color(0xff8d0000), fontSize: 30),
+    ),
+    actions: [
+      ElevatedButton(
+          onPressed: () {},
+          child: Text(
+            'Ok',
+          ),
+          style: ButtonStyle(
+            iconSize: MaterialStatePropertyAll(20),
+            backgroundColor: MaterialStatePropertyAll(Color(0xff8d0000)),
+          )),
+    ],
+  );
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alertDialog;
+      });
 }

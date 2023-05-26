@@ -1,13 +1,12 @@
-
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:grouped_buttons/grouped_buttons.dart';
 import 'package:untitled6/Bar.dart';
 import 'package:flutter_sms/flutter_sms.dart';
-
+import 'package:http/http.dart'as http;
+import 'Crypto/crypto.dart';
 import 'Search.dart';
-
-List<String> recipents = ["01060024776"];
 
 class Compliment extends StatefulWidget {
   var Email="";
@@ -38,6 +37,48 @@ class Compliment extends StatefulWidget {
   State<Compliment> createState() => _MyAppState(Email: Email, Password: Password, username: username, mobile: mobile, Gender: Gender, dob: dob, id: id, Adress: Adress, nationalid: nationalid);
 }
 
+TextEditingController usernamee=TextEditingController();
+TextEditingController mobilee=TextEditingController();
+
+var mobileee;
+var usernameee;
+var data;
+var emailadd;
+var accccnumm;
+
+Future getUserData(String accnum) async {
+  var url = Uri.parse(
+      'https://inconspicuous-pairs.000webhostapp.com/Searchdesktop.php');
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+
+  final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
+
+  var response = await http.post(url, body: {
+    "accountnumber": encAcc,
+  });
+
+  // print(json.decode(response.body));
+  var data1 = await json.decode(response.body);
+  print(data1);
+  data = data1;
+  return data1;
+  // return json.decode(response.body);
+}
+Future<void> getData(String accnum) async {
+
+  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+  final aes = Aes(key);
+  final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
+  accccnumm =decryptedaccnum;
+  usernameee = data[0]["name"];
+  mobileee = data[0]["mobilenumber"];
+}
+
+TextEditingController accnumm=TextEditingController();
+
 class _MyAppState extends State<Compliment> {
   var Email="";
   var Password ="";
@@ -62,13 +103,68 @@ class _MyAppState extends State<Compliment> {
         required this.nationalid,
       }
       );
+
+  Future SendData2() async {
+    var url = Uri.parse(
+        'https://inconspicuous-pairs.000webhostapp.com/messages.php');
+
+    final response = await http.post(url, body: {
+      "accountnumber": accnumm.text,
+      "message": dropdown,
+      "type": 'Compliment ',
+
+    });
+    try {
+      var data = json.decode(response.body);
+      print(data);
+      if (data == "Error") {
+      } else if (data == "Success") {
+        showAlertDialog(context, " Message has been sent successfully ");
+      } else {
+        print("error");
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // ziad
+
+  void sendSms() async {
+    String accountSid = 'ACfd5f299f4d008b84af425e02265f84ac';
+    String authToken = 'a567001e124ed724746edbbfee6c544c';
+    String fromNumber = '+12707137281';
+    String toNumber = mobilee.text;
+    String message = dropdown;
+    String uri = 'https://api.twilio.com/2010-04-01/Accounts/$accountSid/Messages.json';
+
+    var response = await http.post(Uri.parse(uri),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + base64Encode(utf8.encode('$accountSid:$authToken')),
+      },
+      body: {
+        'From': fromNumber,
+        'To': toNumber,
+        'Body': message,
+      },
+    );
+
+    if (response.statusCode == 201) {
+      print('SMS message sent successfully!');
+    } else {
+      print('Failed to send SMS message. ${response.body}');
+    }
+  }
+
   bool isChecked = false;
-  String dropdown = "Dear valued customer ! I wanted to reach out and wish you and your family a very happy holiday season!";
-  var items = ["Dear valued customer ! I wanted to reach out and wish you and your family a very happy holiday season!",
-    "Dear valued customer we want to wish you happy birthday",
-    "Dear valued customer we want to wish you happy Ramadan El Mubark",
-    "Dear valued customer we want to wish you happy Eid",
-    "Dear valued customer we want to wish you happy Mother's day ",
+  String dropdown = 'We just wanted to let you know how much we appreciate your business - thank you for banking with us!';
+  var items = ["We just wanted to let you know how much we appreciate your business - thank you for banking with us!",
+    "Your loyalty to our bank does not go unnoticed. Thank you for being a valued customer.",
+    "We appreciate your trust in us and are always here to meet your banking needs.",
+    "Thank you for choosing our bank. Your continued patronage means a lot to us.",
+    "Your business means a lot to us and we are committed to providing you with the best service possible. ",
+    'We are grateful for your trust in us and thank you for allowing us to serve you'
 
   ];
 
@@ -168,9 +264,18 @@ class _MyAppState extends State<Compliment> {
                                     height: 40,
                                     width: 250,
                                     child: TextField(
+                                      controller: accnumm,
                                       cursorColor: Colors.black,
                                       onChanged: (value) {
                                         setState(() {});
+                                      },
+                                      onSubmitted: (value) {
+                                        getUserData(accnumm.text);
+                                        getData(accnumm.text);
+                                        setState(() {
+                                          mobilee.text=mobileee;
+                                          usernamee.text=usernameee;
+                                        });
                                       },
                                       decoration: InputDecoration(
                                         border: OutlineInputBorder(
@@ -196,6 +301,7 @@ class _MyAppState extends State<Compliment> {
                                     height: 40,
                                     width: 250,
                                     child: TextField(
+                                      controller: usernamee,
                                       cursorColor: Colors.black,
                                       onChanged: (value) {
                                         setState(() {});
@@ -224,6 +330,7 @@ class _MyAppState extends State<Compliment> {
                                     height: 40,
                                     width: 250,
                                     child: TextField(
+                                      controller: mobilee,
                                       cursorColor: Colors.black,
                                       onChanged: (value) {
                                         setState(() {});
@@ -316,7 +423,8 @@ class _MyAppState extends State<Compliment> {
                                   Center(
                                     child: ElevatedButton(
                                       onPressed: () {
-                                        sending_SMS("HI dody", recipents);
+                                        SendData2();
+                                        sendSms();
                                       },
                                       child: Text('Send',
                                           style: TextStyle(
@@ -341,11 +449,27 @@ class _MyAppState extends State<Compliment> {
                     ])))));
   }
 }
-
-void sending_SMS(String msg, List<String> recipents) async {
-  String send_result =
-  await sendSMS(message: msg, recipients: recipents).catchError((err) {
-    print(err);
-  });
-  print(send_result);
+void showAlertDialog(BuildContext context, var text) {
+  var alertDialog = AlertDialog(
+    content: Text(
+      text,
+      style: TextStyle(color: Color(0xff8d0000), fontSize: 30),
+    ),
+    actions: [
+      ElevatedButton(
+          onPressed: () {},
+          child: Text(
+            'Ok',
+          ),
+          style: ButtonStyle(
+            iconSize: MaterialStatePropertyAll(20),
+            backgroundColor: MaterialStatePropertyAll(Color(0xff8d0000)),
+          )),
+    ],
+  );
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alertDialog;
+      });
 }

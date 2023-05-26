@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:untitled6/Get%20Card.dart';
 import 'package:untitled6/transaction.dart';
 import 'Bar.dart';
+import 'Crypto/crypto.dart';
 import 'Search.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -84,12 +85,22 @@ class _MyAppState extends State<ministat> {
   var time;
   var re;
 
+  var sign = '';
+
   Future getUserData(String accnum) async {
     var url = Uri.parse(
         'https://inconspicuous-pairs.000webhostapp.com/trans%20search.php');
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+
+    final encAcc = base64Encode(aes.encrypt(Uint8List.fromList(utf8.encode(accnum))));
+
     var response = await http.post(url, body: {
-      "accountnumber": accnum,
+      "accountnumber": encAcc,
     });
+
+
 
     // print(json.decode(response.body));
     var data1 = await json.decode(response.body);
@@ -100,8 +111,13 @@ class _MyAppState extends State<ministat> {
   }
 
   Future<void> getData(String accnum) async {
+
+    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+    final aes = Aes(key);
+    final decryptedaccnum = utf8.decode(aes.decrypt(base64Decode(data[0]["accountnumber"])));
+
+    accountnum1 =decryptedaccnum;
     transsid = data[0]["transid"];
-    accountnum1 = data[0]["accountnumber"];
     typee = data[0]["type"];
     too = data[0]["tooo"];
     amountt = data[0]["amount"];
@@ -286,6 +302,17 @@ class _MyAppState extends State<ministat> {
                               return ListView.builder(
                                 itemCount: snapshot.data?.length,
                                 itemBuilder: (context, index) {
+                                  final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+                                  final aes = Aes(key);
+
+                                  final decryptedfrom = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['accountnumber'])));
+                                  final decryptedTooo = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['tooo'])));
+                                  final decryptedType = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['type'])));
+                                  final decryptedAmount = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['amount'])));
+                                  final decryptedRbalance = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['rbalance'])));
+                                  final decryptedDate1 = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['date1'])));
+                                  final decryptedTime1 = utf8.decode(aes.decrypt(base64Decode(snapshot.data?[index]['time1'])));
+
                                   return Column(
                                     children: [
                                       Container(
@@ -312,7 +339,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Transaction id: ${snapshot
+                                                        '  Transaction id : ${snapshot
                                                             .data?[index]['transid']}',
                                                         style: TextStyle(
                                                             fontSize: 17,
@@ -327,11 +354,12 @@ class _MyAppState extends State<ministat> {
                                               SizedBox(
                                                 height: 10,
                                               ),
+
                                               Row(
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Account status: Active',
+                                                        '  Account number : ${decryptedfrom}',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -349,7 +377,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Account number: ${snapshot.data?[index]['accountnumber']}',
+                                                        '  To : $decryptedTooo',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -367,7 +395,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  To: ${snapshot.data?[index]['tooo']}',
+                                                        '  Transfer type : ${decryptedType}',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -385,25 +413,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Transfer type: ${snapshot.data?[index]['type']}',
-                                                        style: TextStyle(
-                                                            fontSize: 17,
-                                                            fontWeight:
-                                                            FontWeight
-                                                                .bold)),
-                                                    padding: EdgeInsets.only(
-                                                        left: 5),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(
-                                                height: 10,
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    child: Text(
-                                                        '  Amount: ${snapshot.data?[index]['amount']}',
+                                                        '  Amount : $sign $decryptedAmount',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -420,8 +430,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Remaing balance : ${snapshot
-                                                            .data?[index]['rbalance']}',
+                                                        '  Remaing balance : ${decryptedRbalance}',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -439,8 +448,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Date: ${snapshot
-                                                            .data?[index]['date1']}',
+                                                        '  Date : ${decryptedDate1}',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -458,8 +466,7 @@ class _MyAppState extends State<ministat> {
                                                 children: [
                                                   Container(
                                                     child: Text(
-                                                        '  Time: ${snapshot
-                                                            .data?[index]['time1']}',
+                                                        '  Time : ${decryptedTime1}',
                                                         style: TextStyle(
                                                             fontSize: 17,
                                                             fontWeight:
@@ -580,6 +587,27 @@ class _MyAppState extends State<ministat> {
                 child:pw.ListView.builder(
                   itemCount: data?.length,
                   itemBuilder: (context, index) {
+
+                    final key = "2f7b4e8d71c4a00f2a3f4c175a8a4e6c";
+                    final aes = Aes(key);
+                    final decryptedfrom = utf8.decode(aes.decrypt(base64Decode(data?[index]['accountnumber'])));
+                    final decryptedTooo = utf8.decode(aes.decrypt(base64Decode(data?[index]['tooo'])));
+                    final decryptedType = utf8.decode(aes.decrypt(base64Decode(data?[index]['type'])));
+                    final decryptedAmount = utf8.decode(aes.decrypt(base64Decode(data?[index]['amount'])));
+                    final decryptedRbalance = utf8.decode(aes.decrypt(base64Decode(data?[index]['rbalance'])));
+                    final decryptedDate1 = utf8.decode(aes.decrypt(base64Decode(data?[index]['date1'])));
+                    final decryptedTime1 = utf8.decode(aes.decrypt(base64Decode(data?[index]['time1'])));
+
+                    dynamic transaction = data?[index];
+                    if(transaction['tooo']==accountnum1){
+                      transaction['tooo']='My account';
+                    }
+                    if(transaction['type']=='Deposit'){
+                      sign='+';
+                    }
+                    else{
+                      sign='-';
+                    }
                     return pw.Column(
                       children: [
                         pw.Container(
@@ -590,7 +618,7 @@ class _MyAppState extends State<ministat> {
                                   children: [
                                     pw.Container(
                                       child: pw.Text(
-                                          '  Transaction id: ${data?[index]['transid']} ',
+                                          '  Transaction id : ${data?[index]['transid']} ',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
@@ -606,7 +634,7 @@ class _MyAppState extends State<ministat> {
                                   children: [
                                     pw.Container(
                                       child: pw.Text(
-                                          '  Account number: ${data?[index]['accountnumber']} ',
+                                          '  Account number : ${decryptedfrom} ',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
@@ -622,7 +650,7 @@ class _MyAppState extends State<ministat> {
                                   children: [
                                     pw.Container(
                                       child: pw.Text(
-                                          '  To: $too ',
+                                          '  To : ${decryptedTooo} ',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
@@ -631,32 +659,7 @@ class _MyAppState extends State<ministat> {
                                     ),
                                     pw.Container(
                                       child: pw.Text(
-                                          '  Transfer type: ${data?[index]['type']} ',
-                                          style: pw.TextStyle(
-                                            fontSize: 6,
-                                          )),
-                                      padding: pw.EdgeInsets.only(
-                                          left: 5),
-                                    ),
-                                  ],
-                                ),
-                                pw.SizedBox(
-                                  height: 5,
-                                ),
-                                pw.Row(
-                                  children: [
-                                    pw.Container(
-                                      child: pw.Text(
-                                          '  Amount: ${data?[index]['amount']} ',
-                                          style: pw.TextStyle(
-                                            fontSize: 6,
-                                          )),
-                                      padding: pw.EdgeInsets.only(
-                                          left: 5),
-                                    ),
-                                    pw.Container(
-                                      child: pw.Text(
-                                          '  Balance : ${data?[index]['rbalance']} ',
+                                          '  Transfer type : ${decryptedType} ',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
@@ -672,7 +675,7 @@ class _MyAppState extends State<ministat> {
                                   children: [
                                     pw.Container(
                                       child: pw.Text(
-                                          '  Date : ${data?[index]['date1']} ',
+                                          '  Amount : $sign ${decryptedAmount}',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
@@ -681,7 +684,32 @@ class _MyAppState extends State<ministat> {
                                     ),
                                     pw.Container(
                                       child: pw.Text(
-                                          '  Time : ${data?[index]['time1']} ',
+                                          '  Balance : ${decryptedRbalance} ',
+                                          style: pw.TextStyle(
+                                            fontSize: 6,
+                                          )),
+                                      padding: pw.EdgeInsets.only(
+                                          left: 5),
+                                    ),
+                                  ],
+                                ),
+                                pw.SizedBox(
+                                  height: 5,
+                                ),
+                                pw.Row(
+                                  children: [
+                                    pw.Container(
+                                      child: pw.Text(
+                                          '  Date : ${decryptedDate1} ',
+                                          style: pw.TextStyle(
+                                            fontSize: 6,
+                                          )),
+                                      padding: pw.EdgeInsets.only(
+                                          left: 5),
+                                    ),
+                                    pw.Container(
+                                      child: pw.Text(
+                                          '  Time : ${decryptedTime1} ',
                                           style: pw.TextStyle(
                                             fontSize: 6,
                                           )),
